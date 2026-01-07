@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { Navigate } from '@tanstack/react-router';
+import { Navigate, Link } from '@tanstack/react-router';
 import { db, storage } from '@/lib/firebase';
-import { collection, getDocs, doc, updateDoc, deleteDoc, addDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, deleteDoc, addDoc, query, orderBy } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { toast } from 'sonner';
 import { 
   Users, DollarSign, Activity, Search, Unlock, Smartphone, Trash2, 
-  Shield, Plus, Eye, Save, X, ListChecks, Clock, CheckCircle, HelpCircle
+  Shield, Plus, Eye, Save, X, ListChecks, Clock, CheckCircle, HelpCircle,
+  RefreshCw, BookOpen, ShieldCheck, Home, LayoutDashboard
 } from 'lucide-react';
 
 // --- STYLES ---
@@ -61,8 +62,13 @@ const Styles = () => (
 );
 
 export function AdminPage() {
-  const { user, loading } = useAuth();
+  const { user, userProfile, loading } = useAuth();
   const [activeTab, setActiveTab] = useState('students');
+
+  // --- ROLE CHECKS ---
+  const isMaster = userProfile?.role === 'admin_master'; // Founder
+  const isAcademic = userProfile?.role === 'admin_academic'; // CAO
+  const hasAccess = isMaster || isAcademic;
 
   // --- DATA STATE ---
   const [students, setStudents] = useState<any[]>([]);
@@ -76,18 +82,17 @@ export function AdminPage() {
   
   // Editors
   const [editingModule, setEditingModule] = useState<any>(null);
-  const [editingTest, setEditingTest] = useState<any>(null); // NEW: Test Editor State
+  const [editingTest, setEditingTest] = useState<any>(null);
 
   // --- FETCH DATA ---
   useEffect(() => {
     const fetchData = async () => {
-      if (!user) return;
+      if (!user || !hasAccess) return;
       try {
-        const usersSnap = await getDocs(collection(db, "users"));
+        const usersSnap = await getDocs(query(collection(db, "users"), orderBy("name", "asc")));
         setStudents(usersSnap.docs.map(d => ({ id: d.id, ...d.data() })));
 
         const modulesSnap = await getDocs(collection(db, "modules"));
-        // Sort modules by order
         const mods = modulesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
         setModules(mods.sort((a:any, b:any) => (a.order || 0) - (b.order || 0)));
 
@@ -98,7 +103,21 @@ export function AdminPage() {
       }
     };
     fetchData();
-  }, [user]);
+    if (isAcademic) setActiveTab('content'); // Default CAO to content
+  }, [user, hasAccess, isAcademic]);
+
+  // --- DEVICE ACTIONS (FOUNDER ONLY) ---
+  const handleResetDevices = async (studentId: string) => {
+    if (!isMaster) return toast.error("Founder access required to reset devices");
+    try {
+      await updateDoc(doc(db, "users", studentId), {
+        primaryDeviceID: null,
+        secondaryDeviceID: null
+      });
+      setStudents(prev => prev.map(s => s.id === studentId ? { ...s, primaryDeviceID: null, secondaryDeviceID: null } : s));
+      toast.success("Device locks cleared for this student.");
+    } catch (e) { toast.error("Reset failed."); }
+  };
 
   // --- STUDENT ACTIONS ---
   const handleAddStudent = async (e: React.FormEvent) => {
@@ -111,27 +130,32 @@ export function AdminPage() {
       email: formData.get('email'),
       phone: formData.get('phone'),
       college: formData.get('college'),
+      role: formData.get('role') || 'student', // Capture Role from Form
       isPaid: formData.get('isPaid') === 'on',
       enrolledAt: new Date().toISOString(),
-      role: 'student',
       completedLessons: [],
+      primaryDeviceID: null,
+      secondaryDeviceID: null
     };
 
     try {
       await addDoc(collection(db, "users"), newStudent);
-      setStudents(prev => [...prev, { ...newStudent, id: 'temp-' + Date.now() }]);
-      toast.success("Student added!");
+      const snap = await getDocs(collection(db, "users")); // Refresh
+      setStudents(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      toast.success("User added successfully!");
       setIsAddUserModalOpen(false);
     } catch (e) { toast.error("Failed to add."); }
   };
 
   const togglePremium = async (id: string, current: boolean) => {
+    if (!isMaster) return toast.error("Founder access required");
     await updateDoc(doc(db, "users", id), { isPaid: !current });
     setStudents(prev => prev.map(s => s.id === id ? { ...s, isPaid: !current } : s));
     toast.success("Updated premium status.");
   };
 
   const deleteStudent = async (id: string) => {
+    if (!isMaster) return toast.error("Founder access required");
     if(!confirm("Delete user?")) return;
     await deleteDoc(doc(db, "users", id));
     setStudents(prev => prev.filter(s => s.id !== id));
@@ -149,19 +173,19 @@ export function AdminPage() {
       }
       toast.success("Module saved!");
       setEditingModule(null);
-      // Reload modules to get IDs
       const snap = await getDocs(collection(db, "modules"));
       setModules(snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a:any, b:any) => (a.order||0)-(b.order||0)));
     } catch (e) { toast.error("Save failed."); }
   };
 
   const deleteModule = async (id: string) => {
+    if (!isMaster) return toast.error("Founder access required to delete content");
     if(!confirm("Delete module?")) return;
     await deleteDoc(doc(db, "modules", id));
     setModules(prev => prev.filter(m => m.id !== id));
   };
 
-  // --- TEST SERIES ACTIONS (NEW) ---
+  // --- TEST SERIES ACTIONS ---
   const handleSaveTest = async (test: any) => {
     try {
       if (test.id.startsWith('new-')) {
@@ -172,13 +196,13 @@ export function AdminPage() {
       }
       toast.success("Test Series saved!");
       setEditingTest(null);
-      // Reload
       const snap = await getDocs(collection(db, "testSeries"));
       setTestSeries(snap.docs.map(d => ({ id: d.id, ...d.data() })));
     } catch (e) { toast.error("Save failed."); }
   };
 
   const deleteTest = async (id: string) => {
+    if (!isMaster) return toast.error("Founder access required to delete content");
     if(!confirm("Delete test series?")) return;
     await deleteDoc(doc(db, "testSeries", id));
     setTestSeries(prev => prev.filter(t => t.id !== id));
@@ -197,8 +221,8 @@ export function AdminPage() {
     return { total, premium, revenue: premium * 1499 };
   }, [students]);
 
-  if (loading) return <div>Loading...</div>;
-  if (!user) return <Navigate to="/login" />;
+  if (loading) return <div className="p-20 text-center font-handwritten text-2xl">Verifying Admin Access...</div>;
+  if (!user || !hasAccess) return <Navigate to="/login" />;
 
   return (
     <div className="min-h-screen bg-[#ecfdf5] handwritten-body flex flex-col font-sans">
@@ -209,67 +233,104 @@ export function AdminPage() {
          <div className="max-w-7xl mx-auto flex justify-between items-center">
             <div className="flex items-center gap-3">
                <div className="bg-teal-100 p-2 rounded-lg border-2 border-teal-600"><Shield size={24} className="text-teal-700"/></div>
-               <h1 className="handwritten-title text-3xl font-bold text-gray-800">Admin Panel</h1>
+               <h1 className="handwritten-title text-3xl font-bold text-gray-800">
+                  {isMaster ? "Founder Console" : "CAO Academic Portal"}
+               </h1>
             </div>
             <div className="flex gap-4">
-               {['students', 'content', 'tests'].map(tab => (
-                 <div key={tab} onClick={() => setActiveTab(tab)} className={`nav-tab capitalize ${activeTab === tab ? 'active' : 'text-gray-500'}`}>
-                   {tab === 'content' ? 'Modules' : tab === 'tests' ? 'Tests' : 'Students'}
+               {isMaster && (
+                 <div onClick={() => setActiveTab('students')} className={`nav-tab ${activeTab === 'students' ? 'active' : 'text-gray-500'}`}>
+                    Students
                  </div>
-               ))}
+               )}
+               <div onClick={() => setActiveTab('content')} className={`nav-tab ${activeTab === 'content' ? 'active' : 'text-gray-500'}`}>
+                  Modules
+               </div>
+               <div onClick={() => setActiveTab('tests')} className={`nav-tab ${activeTab === 'tests' ? 'active' : 'text-gray-500'}`}>
+                  Tests
+               </div>
             </div>
          </div>
       </header>
 
       <main className="flex-1 max-w-7xl mx-auto w-full p-6">
         
-        {/* STUDENTS TAB */}
-        {activeTab === 'students' && (
+        {/* STUDENTS TAB (MASTER ONLY) */}
+        {activeTab === 'students' && isMaster && (
           <div className="space-y-6 animate-in fade-in">
              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="admin-card p-6 flex items-center gap-4 bg-white">
                    <div className="bg-blue-100 p-4 rounded-full text-blue-600"><Users size={24}/></div>
-                   <div><div className="text-3xl font-bold">{stats.total}</div><div className="text-gray-500">Total</div></div>
+                   <div><div className="text-3xl font-bold">{stats.total}</div><div className="text-gray-500">Total Enrollment</div></div>
                 </div>
                 <div className="admin-card p-6 flex items-center gap-4 bg-white">
                    <div className="bg-green-100 p-4 rounded-full text-green-600"><DollarSign size={24}/></div>
                    <div><div className="text-3xl font-bold">₹{stats.revenue.toLocaleString()}</div><div className="text-gray-500">Revenue</div></div>
                 </div>
                 <div className="admin-card p-6 flex items-center gap-4 bg-white">
-                   <div className="bg-purple-100 p-4 rounded-full text-purple-600"><Activity size={24}/></div>
-                   <div><div className="text-3xl font-bold">{stats.premium}</div><div className="text-gray-500">Premium</div></div>
+                   <div className="bg-purple-100 p-4 rounded-full text-purple-600"><ShieldCheck size={24}/></div>
+                   <div><div className="text-3xl font-bold">{stats.premium}</div><div className="text-gray-500">Premium Users</div></div>
                 </div>
              </div>
 
-             <div className="flex justify-between gap-4">
-                <div className="relative w-full max-w-md">
-                   <Search className="absolute left-3 top-2.5 text-gray-400 h-5 w-5" />
-                   <input type="text" placeholder="Search students..." className="input-handwritten pl-10 bg-white" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+             {/* FIXED SEARCH BAR UI */}
+             <div className="flex flex-col md:flex-row justify-between gap-4 bg-white p-6 rounded-xl border-2 border-teal-100 shadow-sm">
+                <div className="flex flex-col flex-1 max-w-md">
+                   <label className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1">Search Students</label>
+                   <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-5 w-5" />
+                      <input 
+                        type="text" 
+                        placeholder="Name, email, or college..." 
+                        className="input-handwritten pl-10 bg-white h-11" 
+                        value={searchTerm} 
+                        onChange={e => setSearchTerm(e.target.value)} 
+                      />
+                   </div>
                 </div>
-                <button onClick={() => setIsAddUserModalOpen(true)} className="bg-[#0f766e] text-white px-6 py-2 rounded-lg font-bold shadow-[4px_4px_0px_#065f46] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_#065f46] transition-all flex items-center gap-2">
-                  <Plus size={20} /> Add Student
-                </button>
+                <div className="flex items-end">
+                   <button onClick={() => setIsAddUserModalOpen(true)} className="bg-[#0f766e] text-white px-6 py-2.5 rounded-lg font-bold shadow-[4px_4px_0px_#065f46] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_#065f46] transition-all flex items-center gap-2">
+                     <Plus size={20} /> Add Student
+                   </button>
+                </div>
              </div>
 
              <div className="admin-card bg-white overflow-hidden">
                 <table className="w-full text-left border-collapse">
                    <thead className="bg-teal-50 border-b-2 border-teal-100 text-teal-800">
-                      <tr><th className="p-4">Name</th><th className="p-4">Status</th><th className="p-4 text-center">Actions</th></tr>
+                      <tr>
+                        <th className="p-4">Student</th>
+                        <th className="p-4">Status</th>
+                        <th className="p-4">Device IDs</th>
+                        <th className="p-4 text-center">Actions</th>
+                      </tr>
                    </thead>
                    <tbody className="divide-y divide-gray-100">
                       {filteredStudents.map(s => (
                          <tr key={s.id} className="hover:bg-gray-50">
                             <td className="p-4">
-                               <div className="font-bold">{s.name}</div>
+                               <div className="font-bold text-gray-800">{s.name}</div>
                                <div className="text-sm text-gray-500">{s.email}</div>
+                               <div className="text-[10px] text-teal-600 font-bold uppercase mt-1">{s.college || 'N/A'}</div>
                             </td>
                             <td className="p-4">
                                {s.isPaid ? <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded font-bold border border-green-200">Premium</span> : <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded font-bold border border-yellow-200">Free</span>}
                             </td>
+                            <td className="p-4">
+                               <div className="flex gap-2">
+                                  <div className={`p-1 rounded border ${s.primaryDeviceID ? 'bg-teal-100 border-teal-300 text-teal-700' : 'bg-gray-100 text-gray-300'}`} title="Primary Device">
+                                    <Smartphone size={16}/>
+                                  </div>
+                                  <div className={`p-1 rounded border ${s.secondaryDeviceID ? 'bg-blue-100 border-blue-300 text-blue-700' : 'bg-gray-100 text-gray-300'}`} title="Secondary Device">
+                                    <Smartphone size={16}/>
+                                  </div>
+                               </div>
+                            </td>
                             <td className="p-4 flex justify-center gap-2">
-                               <button onClick={() => setSelectedStudent(s)} className="btn-action p-2 bg-gray-100 rounded text-gray-600"><Eye size={16}/></button>
-                               <button onClick={() => togglePremium(s.id, s.isPaid)} className={`btn-action p-2 rounded text-white ${s.isPaid ? 'bg-orange-500' : 'bg-green-500'}`}>{s.isPaid ? <DollarSign size={16}/> : <Unlock size={16}/>}</button>
-                               <button onClick={() => deleteStudent(s.id)} className="btn-action p-2 bg-red-100 text-red-600 rounded"><Trash2 size={16}/></button>
+                               <button onClick={() => setSelectedStudent(s)} className="btn-action p-2 bg-gray-100 rounded text-gray-600" title="View Details"><Eye size={16}/></button>
+                               <button onClick={() => togglePremium(s.id, s.isPaid)} className={`btn-action p-2 rounded text-white ${s.isPaid ? 'bg-orange-500' : 'bg-green-500'}`} title="Toggle Premium">{s.isPaid ? <DollarSign size={16}/> : <Unlock size={16}/>}</button>
+                               <button onClick={() => handleResetDevices(s.id)} className="btn-action p-2 bg-purple-100 text-purple-600 rounded" title="Reset Device Lock"><RefreshCw size={16}/></button>
+                               <button onClick={() => deleteStudent(s.id)} className="btn-action p-2 bg-red-100 text-red-600 rounded" title="Delete User"><Trash2 size={16}/></button>
                             </td>
                          </tr>
                       ))}
@@ -279,7 +340,7 @@ export function AdminPage() {
           </div>
         )}
 
-        {/* MODULES TAB */}
+        {/* MODULES TAB (FOUNDER & CAO) */}
         {activeTab === 'content' && (
            <div className="space-y-6 animate-in fade-in">
               <div className="flex justify-between items-center">
@@ -294,8 +355,10 @@ export function AdminPage() {
                           <div><h3 className="font-bold text-xl">{m.title}</h3><p className="text-sm text-gray-500">{m.lessons?.length || 0} Lessons</p></div>
                        </div>
                        <div className="flex gap-2">
-                          <button onClick={() => setEditingModule(m)} className="btn-action px-4 py-2 border-2 border-[#0f766e] text-[#0f766e] rounded-lg font-bold">Edit</button>
-                          <button onClick={() => deleteModule(m.id)} className="btn-action p-2 text-red-500 hover:bg-red-50 rounded-lg"><Trash2 size={20}/></button>
+                          <button onClick={() => setEditingModule(m)} className="btn-action px-4 py-2 border-2 border-[#0f766e] text-[#0f766e] rounded-lg font-bold">Edit Content</button>
+                          {isMaster && (
+                            <button onClick={() => deleteModule(m.id)} className="btn-action p-2 text-red-500 hover:bg-red-50 rounded-lg"><Trash2 size={20}/></button>
+                          )}
                        </div>
                     </div>
                  ))}
@@ -303,7 +366,7 @@ export function AdminPage() {
            </div>
         )}
 
-        {/* TEST SERIES TAB (UPDATED) */}
+        {/* TEST SERIES TAB (FOUNDER & CAO) */}
         {activeTab === 'tests' && (
            <div className="space-y-6 animate-in fade-in">
               <div className="flex justify-between items-center">
@@ -327,7 +390,9 @@ export function AdminPage() {
                        <div key={test.id} className="admin-card bg-white p-6 relative group">
                           <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                              <button onClick={() => setEditingTest(test)} className="p-1.5 bg-gray-100 rounded hover:bg-teal-50 hover:text-teal-600"><Eye size={16}/></button>
-                             <button onClick={() => deleteTest(test.id)} className="p-1.5 bg-red-50 text-red-500 rounded hover:bg-red-100"><Trash2 size={16}/></button>
+                             {isMaster && (
+                               <button onClick={() => deleteTest(test.id)} className="p-1.5 bg-red-50 text-red-500 rounded hover:bg-red-100"><Trash2 size={16}/></button>
+                             )}
                           </div>
                           <h3 className="font-bold text-xl text-gray-800 mb-2">{test.title}</h3>
                           <div className="flex flex-wrap gap-2 mb-4">
@@ -344,22 +409,45 @@ export function AdminPage() {
         )}
       </main>
 
+      {/* --- FOOTER / BACK TO HOME --- */}
+      <footer className="p-6 border-t bg-white">
+        <div className="max-w-7xl mx-auto flex justify-between items-center">
+           <Link to="/" className="flex items-center gap-2 text-sm font-bold text-gray-400 hover:text-[#0f766e] transition-colors">
+              <Home size={16}/> Back to Homepage
+           </Link>
+           <Link to="/dashboard" className="flex items-center gap-2 text-sm font-bold text-gray-400 hover:text-[#0f766e] transition-colors">
+              <LayoutDashboard size={16}/> Student View
+           </Link>
+        </div>
+      </footer>
+
       {/* MODALS */}
       {isAddUserModalOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
            <div className="bg-white p-8 rounded-xl w-full max-w-md shadow-2xl border-4 border-[#0f766e]">
-              <h2 className="handwritten-title text-3xl font-bold mb-6">Add Student</h2>
+              <h2 className="handwritten-title text-3xl font-bold mb-6">Add User</h2>
               <form onSubmit={handleAddStudent} className="space-y-4">
                  <input name="name" required className="input-handwritten" placeholder="Full Name" />
                  <input name="email" type="email" required className="input-handwritten" placeholder="Email" />
                  <input name="college" className="input-handwritten" placeholder="College" />
+                 
+                 {/* ROLE SELECTION DROPDOWN */}
+                 <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-1 ml-1">Assign Role</label>
+                    <select name="role" className="input-handwritten">
+                        <option value="student">Student</option>
+                        <option value="admin_academic">Chief Academic Officer (CAO)</option>
+                        {isMaster && <option value="admin_master">Founder / Master Admin</option>}
+                    </select>
+                 </div>
+
                  <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
                     <input name="isPaid" type="checkbox" className="w-5 h-5 text-teal-600" />
-                    <label className="font-bold text-gray-700">Premium?</label>
+                    <label className="font-bold text-gray-700">Premium Account?</label>
                  </div>
                  <div className="flex gap-3 pt-4">
                     <button type="button" onClick={() => setIsAddUserModalOpen(false)} className="flex-1 py-2 font-bold text-gray-500 hover:bg-gray-100 rounded-lg">Cancel</button>
-                    <button type="submit" className="flex-1 py-2 bg-[#0f766e] text-white font-bold rounded-lg">Add</button>
+                    <button type="submit" className="flex-1 py-2 bg-[#0f766e] text-white font-bold rounded-lg">Add User</button>
                  </div>
               </form>
            </div>
@@ -375,21 +463,31 @@ export function AdminPage() {
                  <div><h2 className="text-2xl font-bold">{selectedStudent.name}</h2><p className="text-gray-500">{selectedStudent.email}</p></div>
               </div>
               <div className="grid grid-cols-2 gap-6">
-                 <div><label className="text-xs font-bold text-gray-400">PHONE</label><p className="font-bold">{selectedStudent.phone || 'N/A'}</p></div>
-                 <div><label className="text-xs font-bold text-gray-400">COLLEGE</label><p className="font-bold">{selectedStudent.college || 'N/A'}</p></div>
-                 <div><label className="text-xs font-bold text-gray-400">DEVICE ID</label><code className="text-xs bg-gray-100 p-1 rounded block truncate">{selectedStudent.primaryDeviceID || 'None'}</code></div>
+                 <div><label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Phone</label><p className="font-bold">{selectedStudent.phone || 'N/A'}</p></div>
+                 <div><label className="text-xs font-bold text-gray-400 uppercase tracking-widest">College</label><p className="font-bold">{selectedStudent.college || 'N/A'}</p></div>
+                 <div className="col-span-2">
+                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Primary Device Lock</label>
+                    <code className="text-[10px] bg-gray-100 p-2 rounded block truncate mt-1">{selectedStudent.primaryDeviceID || 'Not Registered'}</code>
+                 </div>
+                 <div className="col-span-2">
+                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Secondary Device Lock</label>
+                    <code className="text-[10px] bg-blue-50 p-2 rounded block truncate mt-1">{selectedStudent.secondaryDeviceID || 'Not Registered'}</code>
+                 </div>
               </div>
            </div>
         </div>
       )}
 
-      {editingModule && (
-        <ModuleEditor module={editingModule} onClose={() => setEditingModule(null)} onSave={handleSaveModule} />
-      )}
+      {/* --- WRAP EDITORS IN FRAGMENT TO FIX JSX PARENT ERROR --- */}
+      <>
+        {editingModule && (
+            <ModuleEditor module={editingModule} onClose={() => setEditingModule(null)} onSave={handleSaveModule} />
+        )}
 
-      {editingTest && (
-        <TestEditor test={editingTest} onClose={() => setEditingTest(null)} onSave={handleSaveTest} />
-      )}
+        {editingTest && (
+            <TestEditor test={editingTest} onClose={() => setEditingTest(null)} onSave={handleSaveTest} />
+        )}
+      </>
 
     </div>
   );
@@ -407,17 +505,14 @@ function ModuleEditor({ module, onClose, onSave }: any) {
       setFormData({ ...formData, lessons: newLessons });
    };
 
-   // CLOUDINARY UPLOAD LOGIC
    const handleFileUpload = async (idx: number, file: File) => {
       if (!file) return;
       setUploading(true);
       const data = new FormData();
       data.append("file", file);
-      data.append("upload_preset", "gate_petroleum_preset"); // REPLACE WITH YOUR PRESET
-      // data.append("cloud_name", "YOUR_CLOUD_NAME"); // Optional if set in URL
+      data.append("upload_preset", "gate_petroleum_preset");
 
       try {
-         // Replace 'YOUR_CLOUD_NAME' with your actual cloud name
          const res = await fetch(`https://api.cloudinary.com/v1_1/YOUR_CLOUD_NAME/auto/upload`, { method: "POST", body: data });
          const json = await res.json();
          if(json.secure_url) {
