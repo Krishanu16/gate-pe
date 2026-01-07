@@ -1,0 +1,109 @@
+type UserRole = 
+ variant {
+   admin;
+   guest;
+   user;
+ };
+type TransformationOutput = record {
+                              response:
+                               record {
+                                 body: blob;
+                                 headers: vec HttpHeader;
+                                 status: nat;
+                               };};
+type TransformationInput = 
+ record {
+   context: blob;
+   response: record {
+               body: blob;
+               headers: vec HttpHeader;
+               status: nat;
+             };
+ };
+type StripeSessionStatus = 
+ variant {
+   completed: record {
+                response: text;
+                userPrincipal: opt text;
+              };
+   failed: record {error: text;};
+ };
+type StripeConfiguration = 
+ record {
+   allowedCountries: vec text;
+   secretKey: text;
+ };
+type ShoppingItem = 
+ record {
+   currency: text;
+   priceInCents: nat;
+   productDescription: text;
+   productName: text;
+   quantity: nat;
+ };
+type PersistentUserProfile = 
+ record {
+   email: text;
+   expiryDate: int;
+   isPaid: bool;
+   lastLogin: int;
+   primaryDeviceID: opt text;
+   progress: vec record {
+                   text;
+                   nat;
+                 };
+   sessionToken: text;
+ };
+type HttpHeader = 
+ record {
+   name: text;
+   value: text;
+ };
+type ContentModule = 
+ record {
+   description: text;
+   id: text;
+   title: text;
+ };
+service : {
+  addContentModule: (contentModule: ContentModule, sessionToken: text) -> ();
+  adminLogin: (username: text, password: text) -> (bool);
+  adminResetDevice: (user: principal) -> ();
+  assignCallerUserRole: (user: principal, role: UserRole) -> ();
+  createCheckoutSession: (items: vec ShoppingItem, successUrl: text,
+   cancelUrl: text) -> (text);
+  deleteContentModule: (contentModuleId: text) -> ();
+  generateProtectedUrl: (contentId: text, sessionToken: text) -> (text);
+  getActiveSessions: () ->
+   (vec record {
+          principal;
+          PersistentUserProfile;
+        }) query;
+  getAllUsers: () -> (vec record {
+                            principal;
+                            PersistentUserProfile;
+                          }) query;
+  getCallerUserProfile: () -> (opt PersistentUserProfile) query;
+  getCallerUserRole: () -> (UserRole) query;
+  getContentModules: (sessionToken: text) -> (vec ContentModule);
+  getExpiryDate: (user: principal) -> (opt int) query;
+  getStripeSessionStatus: (sessionId: text) -> (StripeSessionStatus);
+  initializeAccessControl: () -> ();
+  isCallerAdmin: () -> (bool) query;
+  isStripeConfigured: () -> (bool) query;
+  recordDeviceFingerprint: (deviceFingerprint: text, sessionToken: text) ->
+   ();
+  register: (email: text) -> (text);
+  revokeAccess: (user: principal) -> ();
+  revokeUserSession: (user: principal) -> ();
+  saveCallerUserProfile: (profile: PersistentUserProfile) -> ();
+  setExpiryDate: (user: principal, expiryDate: int) -> ();
+  setStripeConfiguration: (config: StripeConfiguration) -> ();
+  simulatePayment: (sessionToken: text) -> ();
+  transform: (input: TransformationInput) -> (TransformationOutput) query;
+  updateProgress: (contentModuleId: text, progress: nat, sessionToken:
+   text) -> ();
+  updateUserPaymentStatus: (user: principal, isPaid: bool) -> ();
+  verifyDeviceFingerprint: (deviceFingerprint: text, sessionToken: text) ->
+   (bool);
+}

@@ -1,0 +1,12 @@
+{
+  "name": "gate-platform",
+  "version": "1.0.0",
+  "workspaces": [
+    "frontend"
+  ],
+  "dependencies": {
+    "@fingerprintjs/fingerprintjs": "^5.0.1",
+    "firebase": "^12.7.0",
+    "vite-plugin-pwa": "^1.2.0"
+  }
+}
