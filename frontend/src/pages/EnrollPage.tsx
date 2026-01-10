@@ -4,7 +4,7 @@ import { Navigate, Link, useNavigate } from '@tanstack/react-router';
 import { db } from '@/lib/firebase';
 import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { toast } from 'sonner';
-import { Loader2, CheckCircle, ShieldCheck, Star } from 'lucide-react';
+import { Loader2, CheckCircle, ShieldCheck, LogIn } from 'lucide-react';
 
 // --- 1. RAZORPAY TYPE DECLARATION ---
 declare global {
@@ -20,17 +20,15 @@ export const EnrollPage = () => {
     const [processing, setProcessing] = useState(false);
     const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('upi');
 
-    // --- 3. LOADING & AUTH CHECKS ---
+    // --- 3. LOADING CHECK (Keep this, but removed the !user redirect) ---
     if (authLoading) {
         return <div className="min-h-screen bg-[#ecfdf5] flex items-center justify-center"><Loader2 className="animate-spin text-teal-700" /></div>;
     }
 
-    if (!user) {
-        return <Navigate to="/login" />;
-    }
-
     // --- 4. HANDLE PAYMENT SUCCESS (FIREBASE UPDATE) ---
     const handlePaymentSuccess = async (response: any) => {
+        if (!user) return; // Safety check
+
         try {
             // Update User to Premium in Firestore
             await updateDoc(doc(db, "users", user.uid), {
@@ -45,7 +43,6 @@ export const EnrollPage = () => {
             });
             
             toast.success("Welcome to the Batch of 2026! 🎉");
-            // Force reload to update claims/UI or navigate
             navigate({ to: '/dashboard' });
             
         } catch (error) {
@@ -56,9 +53,17 @@ export const EnrollPage = () => {
         }
     };
 
-    // --- 5. TRIGGER RAZORPAY (REAL LOGIC) ---
+    // --- 5. TRIGGER RAZORPAY ---
     const handlePayment = (e: React.FormEvent) => {
         e.preventDefault();
+
+        // [FIX]: Redirect to Login if user tries to pay without being logged in
+        if (!user) {
+            toast.error("Please login to complete your enrollment.");
+            navigate({ to: '/login' });
+            return;
+        }
+
         setProcessing(true);
 
         // Load Razorpay Script dynamically
@@ -67,10 +72,10 @@ export const EnrollPage = () => {
         
         script.onload = () => {
             const options = {
-                key: "YOUR_RAZORPAY_KEY_ID", // <--- ⚠️ REPLACE WITH YOUR ACTUAL KEY ID
-                amount: 49900, // 499.00 INR (in paise)
+                key: "YOUR_RAZORPAY_KEY_ID", // ⚠️ REPLACE WITH ACTUAL KEY
+                amount: 49900, // 499.00 INR
                 currency: "INR",
-                name: "GATE Petroleum",
+                name: "Petro Elite",
                 description: "Premium Course Access 2026",
                 image: "https://cdn-icons-png.flaticon.com/512/2083/2083256.png",
                 handler: function (response: any) {
@@ -79,7 +84,7 @@ export const EnrollPage = () => {
                 prefill: {
                     name: user.displayName || "",
                     email: user.email || "",
-                    contact: "" // Can be pre-filled if you saved it in Onboarding
+                    contact: "" 
                 },
                 theme: {
                     color: "#0f766e"
@@ -114,7 +119,7 @@ export const EnrollPage = () => {
             <header className="nav-header p-4">
                 <nav className="max-w-7xl mx-auto flex justify-between items-center">
                     <h1 className="handwritten-title text-3xl md:text-4xl font-bold text-gray-800">
-                        Petroleum Engineering 2026
+                        Petro Elite
                     </h1>
                     <Link to="/" className="handwritten-body text-lg text-teal-700 hover:text-teal-900">
                         ← Back to Home
@@ -213,13 +218,18 @@ export const EnrollPage = () => {
                                     ))}
                                 </div>
 
+                                {/* [FIX]: DYNAMIC BUTTON STATE */}
                                 <button 
                                     type="submit" 
                                     disabled={processing}
-                                    className="w-full bg-[#0f766e] hover:bg-[#0d9488] text-white font-bold text-xl py-4 rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all flex items-center justify-center gap-2 group disabled:opacity-70 disabled:cursor-not-allowed"
+                                    className={`w-full font-bold text-xl py-4 rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all flex items-center justify-center gap-2 group disabled:opacity-70 disabled:cursor-not-allowed
+                                        ${!user ? 'bg-gray-800 hover:bg-gray-900 text-white' : 'bg-[#0f766e] hover:bg-[#0d9488] text-white'}
+                                    `}
                                 >
                                     {processing ? (
                                         <>Processing <Loader2 className="animate-spin" /></>
+                                    ) : !user ? (
+                                        <><LogIn size={20} /> Login to Enroll</>
                                     ) : (
                                         <>Pay ₹499 Now <ShieldCheck className="group-hover:scale-110 transition-transform" /></>
                                     )}

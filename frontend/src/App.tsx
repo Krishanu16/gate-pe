@@ -3,7 +3,7 @@ import { RouterProvider, createRouter, createRoute, createRootRoute, Outlet } fr
 import { Toaster } from '@/components/ui/sonner';
 import { SecurityLayer } from './components/SecurityLayer';
 
-import LandingPage from './pages/LandingPage';
+import  LandingPage from './pages/LandingPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { AdminPage } from './pages/AdminPage';
 import { EnrollPage } from './pages/EnrollPage';
@@ -13,8 +13,6 @@ import { TestPage } from './pages/TestPage';
 import { LegalPage } from './pages/LegalPage';
 import { HomePage } from './pages/HomePage';
 import { SettingsPage } from './pages/SettingsPage';
-import { FlashcardsPage } from './pages/FlashcardsPage';
-import { AnalyticsPage } from './pages/AnalyticsPage';
 import { OnboardingPage } from './pages/OnboardingPage';
 import { ExplorePage } from './pages/ExplorePage'; // Import
 
@@ -77,8 +75,6 @@ const legalRoute = createRoute({
 });
 
 const settingsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/settings', component: SettingsPage });
-const flashcardsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/flashcards', component: FlashcardsPage });
-const analyticsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/analytics', component: AnalyticsPage });
 
 const onboardingRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -92,11 +88,17 @@ const exploreRoute = createRoute({
   component: ExplorePage,
 });
 
+const landingRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/landing',
+  component: LandingPage,
+});
+
 // Add signupRoute to the tree
 const routeTree = rootRoute.addChildren(  
   [indexRoute, dashboardRoute, adminRoute, enrollRoute, loginRoute,
      signupRoute, testRoute, legalRoute, settingsRoute,
-      flashcardsRoute, analyticsRoute, onboardingRoute, exploreRoute]);
+       onboardingRoute, exploreRoute, landingRoute]);
 
 const router = createRouter({ routeTree });
 
@@ -122,7 +124,7 @@ export default function App() {
       if (document.hidden) {
         document.title = "🚫 Locked";
       } else {
-        document.title = "GATE Petroleum 2026";
+        document.title = "PETRO ELITE";
       }
     };
 

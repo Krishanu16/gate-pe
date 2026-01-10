@@ -6,7 +6,7 @@ import FingerprintJS from '@fingerprintjs/fingerprintjs';
 
 export const useAuth = () => {
   const [user, setUser] = useState<User | null>(null);
-  const [isLocked, setIsLocked] = useState(false); // <--- REQUIRED FIX
+  const [isLocked, setIsLocked] = useState(false);
   const [loading, setLoading] = useState(true);
   const [userProfile, setUserProfile] = useState<any>(null);
 
@@ -27,21 +27,44 @@ export const useAuth = () => {
           if (userSnap.exists()) {
             const data = userSnap.data();
             setUserProfile(data);
+
+            // 3. ADMIN BYPASS (Critical for you and CAO)
+            if (data.role === 'admin_master' || data.role === 'admin_academic') {
+                setUser(currentUser);
+                setIsLocked(false);
+                setLoading(false);
+              return; 
+            }
             
+            // 4. STUDENT DEVICE LOGIC (Primary + Secondary)
             if (!data.primaryDeviceID) {
+              // Claim Primary Slot
               await updateDoc(userRef, { primaryDeviceID: currentDeviceID });
               setUser(currentUser);
               setIsLocked(false);
             } else if (data.primaryDeviceID === currentDeviceID) {
+              // Match Primary
+              setUser(currentUser);
+              setIsLocked(false);
+            } else if (!data.secondaryDeviceID) {
+              // Claim Secondary Slot
+              await updateDoc(userRef, { secondaryDeviceID: currentDeviceID });
+              setUser(currentUser);
+              setIsLocked(false);
+            } else if (data.secondaryDeviceID === currentDeviceID) {
+              // Match Secondary
               setUser(currentUser);
               setIsLocked(false);
             } else {
-              setIsLocked(true); // LOCK IF MISMATCH
+              // Both slots full & no match -> LOCK
+              setIsLocked(true); 
             }
           } else {
+            // New User Creation
             await setDoc(userRef, { 
               email: currentUser.email,
               primaryDeviceID: currentDeviceID,
+              role: 'student', // Default role
               isPaid: false,
               createdAt: new Date()
             });

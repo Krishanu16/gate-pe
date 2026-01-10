@@ -72,9 +72,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
       manifest: {
-        name: 'GATE Petroleum 2026',
-        short_name: 'GATE PE',
-        description: 'Complete preparation platform for GATE Petroleum Engineering',
+        name: 'PETRO ELITE',
+        short_name: 'PETRO ELITE',
+        description: 'Premium preparation platform for Petroleum Engineering',
         theme_color: '#0f766e',
         background_color: '#ecfdf5',
         display: 'standalone',

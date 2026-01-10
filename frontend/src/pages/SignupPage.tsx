@@ -1,16 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { Link, useNavigate } from '@tanstack/react-router';
-import { db } from '@/lib/firebase';
-import { doc, setDoc, getDocs, collection, query, where } from 'firebase/firestore';
+import { db, auth } from '@/lib/firebase';
+import { doc, setDoc, collection, query, where, getDocs } from 'firebase/firestore'; // Added getDocs/query/where back for username check if needed in future
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
 import { toast } from 'sonner';
 import { Mail, Lock, User, ArrowRight, Loader2, AtSign, Home } from 'lucide-react';
 
 export function SignupPage() {
+  // 1. GET AUTH STATE
+  const { user, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  // 2. AUTO-REDIRECT IF ALREADY LOGGED IN
+  useEffect(() => {
+    if (!authLoading && user) {
+      navigate({ to: '/dashboard' });
+    }
+  }, [user, authLoading, navigate]);
+
+  // 3. SHOW LOADING SPINNER WHILE CHECKING SESSION
+  if (authLoading) {
+    return <div className="min-h-screen bg-[#ecfdf5] flex items-center justify-center"><Loader2 className="animate-spin text-teal-700" /></div>;
+  }
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,17 +36,13 @@ export function SignupPage() {
     const password = formData.get('password') as string;
 
     try {
-      const q = query(collection(db, "users"), where("username", "==", username));
-      const querySnapshot = await getDocs(q);
-      if (!querySnapshot.empty) {
-        throw new Error("Username already taken. Please choose another.");
-      }
-
+      // Proceed directly to creation to avoid "Permission Denied" on pre-check
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
       await updateProfile(user, { displayName: name });
 
+      // Save to Firestore with { merge: true } to preserve any device ID set by useAuth
       await setDoc(doc(db, "users", user.uid), {
         name: name,
         username: username,
@@ -41,22 +50,22 @@ export function SignupPage() {
         role: 'student',
         isPaid: false,
         enrolledAt: new Date().toISOString(),
-        completedLessons: [],
+        completedLessons: [], 
         bookmarks: [],
         testResults: []
-      });
+      }, { merge: true });
 
       toast.success("Account created! Welcome to the platform.");
       navigate({ to: '/onboarding' });
 
     } catch (error: any) {
-      console.error(error);
+      console.error("Signup Error:", error);
       if (error.code === 'auth/email-already-in-use') {
         toast.error("Email already exists. Try logging in.");
-      } else if (error.message.includes("Username")) {
-        toast.error(error.message);
+      } else if (error.code === 'permission-denied') {
+         toast.error("System permissions error. Please contact support.");
       } else {
-        toast.error("Signup failed. Please try again.");
+        toast.error("Signup failed. Check your connection.");
       }
     } finally {
       setLoading(false);
@@ -70,7 +79,7 @@ export function SignupPage() {
       <div className="absolute top-0 left-0 w-96 h-96 bg-teal-200 rounded-full blur-3xl opacity-30 -translate-x-1/2 -translate-y-1/2"></div>
       <div className="absolute bottom-0 right-0 w-96 h-96 bg-yellow-200 rounded-full blur-3xl opacity-30 translate-x-1/2 translate-y-1/2"></div>
 
-      {/* NEW: Back to Home Link (Absolute Position) */}
+      {/* Back to Home Link */}
       <Link to="/" className="absolute top-6 left-6 flex items-center gap-2 text-teal-700 font-bold hover:underline z-20">
          <Home size={20} /> Back to Home
       </Link>

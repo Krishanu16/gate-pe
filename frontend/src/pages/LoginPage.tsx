@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { signInWithEmailAndPassword } from 'firebase/auth';
@@ -8,8 +8,26 @@ import { toast } from 'sonner';
 import { Mail, Lock, ArrowRight, Loader2, User, Home } from 'lucide-react';
 
 export function LoginPage() {
+  // 1. GET AUTH STATE
+  const { user, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  // 2. AUTO-REDIRECT IF ALREADY LOGGED IN
+  useEffect(() => {
+    if (!authLoading && user) {
+      if (user.email === "admin@gatepetroleum.com") {
+        navigate({ to: '/admin' });
+      } else {
+        navigate({ to: '/dashboard' });
+      }
+    }
+  }, [user, authLoading, navigate]);
+
+  // 3. SHOW LOADING SPINNER WHILE CHECKING SESSION
+  if (authLoading) {
+    return <div className="min-h-screen bg-[#ecfdf5] flex items-center justify-center"><Loader2 className="animate-spin text-teal-700" /></div>;
+  }
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,6 +38,7 @@ export function LoginPage() {
     const password = formData.get('password') as string;
 
     try {
+      // Logic to allow login with Username OR Email
       if (!identifier.includes('@')) {
         const q = query(collection(db, "users"), where("username", "==", identifier.toLowerCase()));
         const querySnapshot = await getDocs(q);
@@ -32,6 +51,7 @@ export function LoginPage() {
 
       await signInWithEmailAndPassword(auth, identifier, password);
       
+      // Navigation is handled by the useEffect above or explicit nav here for speed
       if (identifier === "admin@gatepetroleum.com") {
         navigate({ to: '/admin' });
       } else {
@@ -58,7 +78,7 @@ export function LoginPage() {
       <div className="absolute top-0 right-0 w-96 h-96 bg-purple-200 rounded-full blur-3xl opacity-30 translate-x-1/2 -translate-y-1/2"></div>
       <div className="absolute bottom-0 left-0 w-96 h-96 bg-teal-200 rounded-full blur-3xl opacity-30 -translate-x-1/2 translate-y-1/2"></div>
 
-      {/* NEW: Back to Home Link */}
+      {/* Back to Home Link */}
       <Link to="/" className="absolute top-6 left-6 flex items-center gap-2 text-teal-700 font-bold hover:underline z-20">
          <Home size={20} /> Back to Home
       </Link>

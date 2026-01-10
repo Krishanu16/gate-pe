@@ -3,8 +3,9 @@ import { Link } from '@tanstack/react-router';
 import { 
   ArrowRight, CheckCircle, FileText, Award, 
   ChevronDown, CheckSquare, Clock, ShieldCheck, Zap,
-  Layers, PenTool, Database, Monitor
+  Layers, PenTool, Database, Monitor, LockKeyhole, BookHeart
 } from 'lucide-react';
+import { Logo } from '@/components/Logo';
 
 const Styles = () => (
   <style>{`
@@ -52,8 +53,7 @@ export function HomePage() {
       <nav className="fixed w-full bg-white/90 backdrop-blur-md border-b border-teal-100 z-50 transition-all">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="bg-[#0f766e] text-white p-1.5 rounded-lg font-bold text-xl shadow-sm">PE</div>
-            <span className="font-bold text-xl tracking-tight text-gray-900">GATE Petroleum</span>
+            <Logo />
           </div>
           <div className="hidden md:flex items-center gap-8 text-sm font-bold text-gray-600">
             <a href="#features" className="hover:text-[#0f766e] transition-colors">Features</a>
@@ -62,7 +62,7 @@ export function HomePage() {
           </div>
           <div className="flex items-center gap-4">
             <Link to="/login" className="text-gray-600 font-bold hover:text-[#0f766e] text-sm hidden sm:block">Login</Link>
-            <Link to="/enroll" className="bg-[#0f766e] text-white px-5 py-2 rounded-full font-bold text-sm hover:bg-[#0d9488] transition-all shadow-lg shadow-teal-200/50">
+            <Link to="/explore" className="bg-[#0f766e] text-white px-5 py-2 rounded-full font-bold text-sm hover:bg-[#0d9488] transition-all shadow-lg shadow-teal-200/50">
               Get Started
             </Link>
           </div>
@@ -80,19 +80,19 @@ export function HomePage() {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
             </span>
-            <span className="text-sm font-bold text-gray-600">Revolution in Petroleum Engineering</span>
+            <span className="text-sm font-bold text-gray-600">The Revolution in Petroleum Engineering Education</span>
           </div>
           
           <h1 className="text-5xl md:text-7xl font-black text-gray-900 mb-6 tracking-tight leading-[1.1]">
-            Notes that actually <br/>
+            Elite Petroleum <br/>
             <span className="text-[#0f766e] handwritten-title relative">
-              make sense.
+              knowledge
               <svg className="absolute w-full h-3 -bottom-2 left-0 text-[#0f766e] opacity-40" viewBox="0 0 200 9" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2.00026 6.99996C18.4424 4.58232 75.9002 -0.844781 198.001 2.99996" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/></svg>
             </span>
           </h1>
           
           <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-10 leading-relaxed font-handwritten">
-             Stop reading 1000-page textbooks. Master Petroleum Engineering with concise handwritten notes, visual animations, and real GATE-style mock tests.
+             Stop reading 1000-page textbooks. Master Petroleum Engineering with concise handwritten notes featuring visual diagrams for better understanding, and real GATE-style mock tests.
           </p>
           
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -108,7 +108,7 @@ export function HomePage() {
           <div className="mt-16 grid grid-cols-2 md:grid-cols-3 gap-8 max-w-4xl mx-auto border-t border-teal-100 pt-10">
             <StatBox label="Concise Material" value="Handwritten Notes" icon={<PenTool className="text-teal-600 mb-2" />} />
             <StatBox label="Real Exam Feel" value="TCS iON Interface" icon={<Monitor className="text-teal-600 mb-2" />} />
-            <StatBox label="Visual Learning" value="3D Animations" icon={<Layers className="text-teal-600 mb-2" />} />
+            <StatBox label="No Piracy" value="Elite Security" icon={<LockKeyhole className="text-teal-600 mb-2" />} />
           </div>
         </div>
       </header>
@@ -233,7 +233,6 @@ export function HomePage() {
                  <ListItem text="Flowcharts & Diagrams" />
                  <ListItem text="Formula Sheets Included" />
                  <ListItem text="Highlighting Key Concepts" />
-                 <ListItem text="Downloadable PDF Format" />
               </div>
            </div>
            
@@ -297,7 +296,6 @@ export function HomePage() {
             <h2 className="text-center text-3xl font-black text-gray-900 mb-10">Frequently Asked Questions</h2>
             <div className="space-y-4">
                <FaqItem q="Can I access the course on Mobile?" a="Yes! Our platform works perfectly on both Desktop (for tests) and Mobile (for notes/videos)." />
-               <FaqItem q="How long is the validity?" a="The course is valid until the GATE 2026 exam date. You have lifetime access to notes." />
                <FaqItem q="Is the test interface exactly like GATE?" a="Yes. We have replicated the TCS iON interface pixel-by-pixel, including the Virtual Calculator and Color Palette." />
                <FaqItem q="Can I get a refund?" a="Yes, we offer a 7-day money-back guarantee if you are not satisfied with the content." />
             </div>
@@ -311,7 +309,7 @@ export function HomePage() {
           <div className="relative z-10">
             <h2 className="text-3xl md:text-5xl font-black mb-6 handwritten-title">Ready to top GATE 2026?</h2>
             <p className="text-teal-100 text-lg mb-10 max-w-xl mx-auto">
-              Join the new batch today. Early bird pricing ends soon.
+              Become a PETRO ELITE member today.
             </p>
             <Link to="/enroll" className="inline-block bg-white text-[#0f766e] px-10 py-4 rounded-xl font-bold text-xl hover:bg-teal-50 transition-colors shadow-lg">
               Enroll for ₹1499
@@ -326,7 +324,7 @@ export function HomePage() {
       {/* FOOTER */}
       <footer className="bg-white border-t border-gray-100 py-12 text-center">
          <div className="flex justify-center items-center gap-2 mb-4 text-gray-400 font-bold">
-           <div className="bg-gray-200 p-1 rounded">PE</div> GATE Petroleum 2026
+           <div className="bg-gray-200 p-1 rounded">PE</div> PETRO Elite
          </div>
          <p className="text-gray-500 text-sm">© 2026. Made for Engineers, by Engineers.</p>
          <div className="mt-4 flex justify-center gap-6 text-sm font-bold text-gray-400">
