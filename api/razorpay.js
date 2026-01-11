@@ -2,7 +2,7 @@ import Razorpay from "razorpay";
 import shortid from "shortid";
 
 export default async function handler(req, res) {
-  // 1. Setup CORS Headers (Required for browser requests)
+  // 1. Add CORS Headers (Crucial for Vercel/Live Site)
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*'); 
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
@@ -11,28 +11,29 @@ export default async function handler(req, res) {
     'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
   );
 
-  // 2. Handle Preflight Request (Browser asks: "Can I POST?")
+  // 2. Handle the Preflight Request (Browser asks: "Can I connect?")
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
-  // 3. Reject anything that isn't POST
+  // 3. Only then check for POST
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
   try {
+    // 4. Initialize Razorpay
     const razorpay = new Razorpay({
       key_id: process.env.VITE_RAZORPAY_KEY_ID, 
       key_secret: process.env.RAZORPAY_KEY_SECRET,
     });
 
-    // Use the amount from the frontend (safe because we are trusting the client for now)
-    // Or default to 2499
-    const amount = req.body.amount ? (req.body.amount / 100) : 2499; 
+    // 5. Secure Price Logic: Use frontend amount or fallback
+    const { amount } = req.body;
+    const paymentAmount = amount ? amount : 249900; // Default to ₹2499 if missing
 
     const options = {
-      amount: (amount * 100).toString(),
+      amount: paymentAmount.toString(),
       currency: "INR",
       receipt: shortid.generate(),
       payment_capture: 1,
