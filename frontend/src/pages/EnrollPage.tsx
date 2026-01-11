@@ -137,10 +137,19 @@ export function EnrollPage() {
         body: JSON.stringify({ amount: finalPrice * 100 }) // Amount in Paise
       });
       
-      const orderData = await response.json();
+      const textResponse = await response.text();
+      console.log("Raw Server Response:", textResponse); // Check this in Browser Console!
 
-      if (!response.ok) throw new Error("Server Error");
+      let orderData;
+      try {
+        orderData = JSON.parse(textResponse);
+      } catch (e) {
+        throw new Error(`Server returned non-JSON: ${textResponse.substring(0, 100)}...`);
+      }
 
+      if (!response.ok) {
+        throw new Error(orderData.details || orderData.error || "Server Error");
+      }
       // Step B: Open Popup
       const options = {
         // 🔴 FIX: Using Environment Variable //RAZORPAYKEY
@@ -178,9 +187,9 @@ export function EnrollPage() {
       const paymentObject = new (window as any).Razorpay(options);
       paymentObject.open();
 
-    } catch (error) {
-      console.error(error);
-      alert("Something went wrong with the transaction. Please try again.");
+    } catch (error: any) {
+      console.error("PAYMENT FAILED:", error);
+      alert(`Payment Error: ${error.message}`);
     }
     setProcessingPayment(false);
   };
