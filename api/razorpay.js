@@ -1,7 +1,7 @@
 import Razorpay from "razorpay";
 
 export default async function handler(req, res) {
-  // 1. CORS Headers
+  // 1. Add CORS Headers
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
@@ -10,16 +10,20 @@ export default async function handler(req, res) {
     'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
   );
 
-  // 2. Preflight
-  if (req.method === 'OPTIONS') return res.status(200).end();
+  // 2. Handle Preflight (Browser Check)
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
 
-  // 3. Check Method
-  if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
+  // 3. Check for POST Method
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
+  }
 
   try {
     // 4. Initialize Razorpay
     if (!process.env.VITE_RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
-        throw new Error("Razorpay Keys are missing in Environment Variables.");
+      throw new Error("Razorpay Keys are missing in Environment Variables.");
     }
 
     const razorpay = new Razorpay({
@@ -31,11 +35,13 @@ export default async function handler(req, res) {
     const { amount } = req.body;
     const paymentAmount = amount || 249900; 
 
+    // Generate a Receipt ID using native Math.random (No 'shortid' needed)
+    const receiptId = `rec_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+
     const options = {
       amount: paymentAmount.toString(),
       currency: "INR",
-      // REPLACEMENT: Generate ID without 'shortid' package to prevent crashes
-      receipt: `rec_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`, 
+      receipt: receiptId,
       payment_capture: 1,
     };
 
@@ -48,8 +54,7 @@ export default async function handler(req, res) {
     });
 
   } catch (error) {
-    console.error("BACKEND CRASH:", error);
-    // Return error as JSON so frontend doesn't break
-    res.status(500).json({ error: error.message, details: error.toString() });
+    console.error("Razorpay Error:", error);
+    res.status(500).json({ error: error.message });
   }
 }
