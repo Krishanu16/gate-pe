@@ -18,7 +18,6 @@ export default async function handler(req, res) {
 
   try {
     // 4. Initialize Razorpay
-    // Ensure these ENV variables are set in Vercel Dashboard
     if (!process.env.VITE_RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
         throw new Error("Razorpay Keys are missing in Environment Variables.");
     }
@@ -35,7 +34,7 @@ export default async function handler(req, res) {
     const options = {
       amount: paymentAmount.toString(),
       currency: "INR",
-      // REPLACEMENT: Generate ID without 'shortid' package
+      // REPLACEMENT: Generate ID without 'shortid' package to prevent crashes
       receipt: `rec_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`, 
       payment_capture: 1,
     };
