@@ -7,6 +7,25 @@
   "dependencies": {
     "@fingerprintjs/fingerprintjs": "^5.0.1",
     "firebase": "^12.7.0",
+    "razorpay": "^2.9.6",
+    "shortid": "^2.2.17",
     "vite-plugin-pwa": "^1.2.0"
-  }
+  },
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Krishanu16/gate-pe.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Krishanu16/gate-pe/issues"
+  },
+  "homepage": "https://github.com/Krishanu16/gate-pe#readme"
 }

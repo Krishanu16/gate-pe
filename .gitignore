@@ -6,3 +6,5 @@ frontend/.env
 .env
 node_modules/
 .dfx/
+.vercel
+.env*.local

@@ -3,7 +3,9 @@ import { Link } from '@tanstack/react-router';
 import { 
   ArrowRight, CheckCircle, FileText, Award, 
   ChevronDown, CheckSquare, Clock, ShieldCheck, Zap,
-  Layers, PenTool, Database, Monitor, LockKeyhole, BookHeart
+  Layers, PenTool, LockKeyhole, 
+  Bot, Sparkles, BrainCircuit, MessageCircle, Search, 
+  Repeat, Brain
 } from 'lucide-react';
 import { Logo } from '@/components/Logo';
 
@@ -41,6 +43,17 @@ const Styles = () => (
     .gate-btn-mock { height: 25px; width: 25px; background: #ddd; border-radius: 2px; }
     .gate-btn-mock.green { background: #22c55e; clip-path: circle(50%); }
     .gate-btn-mock.red { background: #ef4444; clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%); }
+
+    /* AI Chat Animation */
+    .typing-dot {
+      animation: typing 1.4s infinite ease-in-out both;
+    }
+    .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+    .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+    @keyframes typing {
+      0%, 80%, 100% { transform: scale(0); } 
+      40% { transform: scale(1); }
+    }
   `}</style>
 );
 
@@ -56,12 +69,13 @@ export function HomePage() {
             <Logo />
           </div>
           <div className="hidden md:flex items-center gap-8 text-sm font-bold text-gray-600">
-            <a href="#features" className="hover:text-[#0f766e] transition-colors">Features</a>
-            <a href="#test-series" className="hover:text-[#0f766e] transition-colors">Test Series</a>
-            <a href="#animations" className="hover:text-[#0f766e] transition-colors">Visual Learning</a>
+            <a href="#petrobot" className="hover:text-[#0f766e] transition-colors flex items-center gap-1"><Sparkles size={14} className="text-purple-500"/> AI Tutor</a>
+            <a href="#features" className="hover:text-[#0f766e] transition-colors">Exam Interface</a>
+            <a href="#flashcards" className="hover:text-[#0f766e] transition-colors">Flashcards</a>
           </div>
           <div className="flex items-center gap-4">
-            <Link to="/login" className="text-gray-600 font-bold hover:text-[#0f766e] text-sm hidden sm:block">Login</Link>
+            {/* FIX: Removed 'hidden sm:block' so Login shows on mobile */}
+            <Link to="/login" className="text-gray-600 font-bold hover:text-[#0f766e] text-sm">Login</Link>
             <Link to="/explore" className="bg-[#0f766e] text-white px-5 py-2 rounded-full font-bold text-sm hover:bg-[#0d9488] transition-all shadow-lg shadow-teal-200/50">
               Get Started
             </Link>
@@ -74,13 +88,12 @@ export function HomePage() {
         <div className="blob blob-1"></div>
         <div className="max-w-7xl mx-auto relative z-10 text-center">
           
-          {/* UPDATED BADGE */}
           <div className="inline-flex items-center gap-2 bg-white border border-teal-200 rounded-full px-4 py-1.5 mb-8 shadow-sm animate-in fade-in zoom-in duration-500">
             <span className="flex h-2.5 w-2.5 relative">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
             </span>
-            <span className="text-sm font-bold text-gray-600">The Revolution in Petroleum Engineering Education</span>
+            <span className="text-sm font-bold text-gray-600">Now with AI-Powered Flashcards & Doubt Solving</span>
           </div>
           
           <h1 className="text-5xl md:text-7xl font-black text-gray-900 mb-6 tracking-tight leading-[1.1]">
@@ -92,28 +105,93 @@ export function HomePage() {
           </h1>
           
           <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-10 leading-relaxed font-handwritten">
-             Stop reading 1000-page textbooks. Master Petroleum Engineering with concise handwritten notes featuring visual diagrams for better understanding, and real GATE-style mock tests.
+             Stop reading 1000-page textbooks. Master Petroleum Engineering with Petrobot AI, Smart Flashcards, and concise handwritten notes.
           </p>
           
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link to="/enroll" className="w-full sm:w-auto px-8 py-4 bg-[#0f766e] text-white rounded-xl font-bold text-lg shadow-[6px_6px_0px_#065f46] hover:translate-y-[-2px] hover:shadow-[8px_8px_0px_#065f46] transition-all flex items-center justify-center gap-2">
               Start Free Trial <ArrowRight size={20} />
             </Link>
-            {/* UPDATED EXPLORE LINK */}
             <Link to="/explore" className="w-full sm:w-auto px-8 py-4 bg-white text-gray-700 border-2 border-gray-200 rounded-xl font-bold text-lg hover:border-teal-500 hover:text-teal-600 transition-all flex items-center justify-center gap-2">
-              <Zap size={20} /> Explore Now (Free)
+              <Zap size={20} /> Explore Content
             </Link>
           </div>
 
           <div className="mt-16 grid grid-cols-2 md:grid-cols-3 gap-8 max-w-4xl mx-auto border-t border-teal-100 pt-10">
             <StatBox label="Concise Material" value="Handwritten Notes" icon={<PenTool className="text-teal-600 mb-2" />} />
-            <StatBox label="Real Exam Feel" value="TCS iON Interface" icon={<Monitor className="text-teal-600 mb-2" />} />
+            <StatBox label="Doubt Solver" value="Petrobot AI" icon={<Bot className="text-teal-600 mb-2" />} />
             <StatBox label="No Piracy" value="Elite Security" icon={<LockKeyhole className="text-teal-600 mb-2" />} />
           </div>
         </div>
       </header>
 
-      {/* FEATURE 1: REAL GATE INTERFACE */}
+      {/* SECTION 1: PETROBOT AI (Moved to Top) */}
+      <section id="petrobot" className="py-24 px-6 bg-gradient-to-b from-indigo-950 to-purple-900 text-white relative overflow-hidden">
+         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/circuit.png')] opacity-10"></div>
+         <div className="max-w-7xl mx-auto flex flex-col md:flex-row-reverse items-center gap-16 relative z-10">
+            <div className="flex-1 space-y-6">
+                <div className="inline-flex items-center gap-2 bg-indigo-500/20 text-indigo-200 border border-indigo-500/50 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest">
+                   <Sparkles size={12}/> Industry First
+                </div>
+                <h2 className="text-4xl md:text-5xl font-black leading-tight">
+                   Introducing the first ever <br/>
+                   <span className="text-indigo-400">Complete Petroleum Industry</span><br/>
+                   based Search Engine.
+                </h2>
+                <p className="text-indigo-100 text-lg leading-relaxed max-w-lg">
+                   Stuck on a reservoir calculation at 2 AM? Petrobot isn't just a generic AI; it's trained on thousands of GATE questions, SPE papers, and handbooks to give you precise, industry-specific solutions.
+                </p>
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-indigo-800/40 p-4 rounded-xl border border-indigo-700">
+                        <Search className="text-indigo-300 mb-2"/>
+                        <h4 className="font-bold">Deep Search</h4>
+                        <p className="text-xs text-indigo-300">Find formulas & constants instantly.</p>
+                    </div>
+                    <div className="bg-indigo-800/40 p-4 rounded-xl border border-indigo-700">
+                        <MessageCircle className="text-indigo-300 mb-2"/>
+                        <h4 className="font-bold">Doubt Solving</h4>
+                        <p className="text-xs text-indigo-300">Upload questions, get step-by-step logic.</p>
+                    </div>
+                </div>
+            </div>
+            
+            {/* Chat UI Mockup */}
+            <div className="flex-1 w-full max-w-md">
+                <div className="bg-gray-900 rounded-2xl border border-gray-700 shadow-2xl overflow-hidden flex flex-col h-[400px]">
+                    <div className="bg-gray-800 p-4 flex items-center gap-3 border-b border-gray-700">
+                        <div className="w-8 h-8 bg-indigo-500 rounded-full flex items-center justify-center"><Bot size={18} className="text-white"/></div>
+                        <div>
+                            <div className="font-bold text-sm text-white">Petrobot AI</div>
+                            <div className="text-[10px] text-green-400 flex items-center gap-1"><span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span> Online</div>
+                        </div>
+                    </div>
+                    <div className="flex-1 p-4 space-y-4 font-mono text-xs overflow-hidden">
+                        <div className="flex justify-end">
+                            <div className="bg-indigo-600 text-white p-3 rounded-2xl rounded-tr-none max-w-[80%]">
+                                What is the Klinkenberg effect?
+                            </div>
+                        </div>
+                        <div className="flex justify-start">
+                            <div className="bg-gray-800 text-gray-200 p-3 rounded-2xl rounded-tl-none max-w-[90%] border border-gray-700">
+                                <p className="mb-2">The Klinkenberg effect describes gas slippage at pore walls, causing measured permeability ($k_g$) to be higher than absolute liquid permeability ($k_L$).</p>
+                                <div className="bg-black/30 p-2 rounded mb-1 text-green-300">k_g = k_L * (1 + b/P)</div>
+                                <p>Where P is mean pressure and b is the slip factor.</p>
+                            </div>
+                        </div>
+                         <div className="flex justify-start">
+                            <div className="bg-gray-800 text-gray-200 p-3 rounded-2xl rounded-tl-none w-12 flex gap-1 justify-center items-center">
+                                <span className="w-1.5 h-1.5 bg-gray-500 rounded-full typing-dot"></span>
+                                <span className="w-1.5 h-1.5 bg-gray-500 rounded-full typing-dot"></span>
+                                <span className="w-1.5 h-1.5 bg-gray-500 rounded-full typing-dot"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+         </div>
+      </section>
+
+      {/* SECTION 2: REAL GATE INTERFACE */}
       <div id="features">
           <section className="py-20 px-6 bg-gray-900 text-white overflow-hidden relative">
              <div className="absolute top-0 right-0 w-96 h-96 bg-blue-600 rounded-full blur-[100px] opacity-20"></div>
@@ -173,87 +251,50 @@ export function HomePage() {
           </section>
       </div>
 
-      {/* FEATURE 2: VISUAL LEARNING */}
-      <section id="animations" className="py-24 px-6 bg-white">
+      {/* SECTION 3: AI FLASHCARDS (Replaced Visuals Section) */}
+      <section id="flashcards" className="py-24 px-6 bg-white">
          <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-16">
             <div className="flex-1">
-               <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-1 rounded-2xl shadow-2xl rotate-2 hover:rotate-0 transition-transform duration-500">
-                  <div className="bg-gray-900 rounded-xl overflow-hidden aspect-video flex items-center justify-center relative">
-                      <div className="absolute inset-0 flex items-center justify-center">
-                          <div className="w-32 h-32 border-4 border-blue-400 rounded-full animate-ping opacity-20 absolute"></div>
-                          <div className="w-24 h-24 border-4 border-blue-500 rounded-full animate-ping delay-100 opacity-40 absolute"></div>
-                          <Database className="text-white w-16 h-16 relative z-10 animate-bounce" />
+               <div className="bg-gradient-to-br from-yellow-400 to-orange-500 p-1 rounded-2xl shadow-2xl rotate-2 hover:rotate-0 transition-transform duration-500">
+                  <div className="bg-white rounded-xl overflow-hidden aspect-[4/3] flex items-center justify-center relative p-8 text-center flex-col">
+                      <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mb-4">
+                          <Brain className="text-yellow-600" size={32}/>
                       </div>
-                      <div className="absolute bottom-4 left-4 bg-black/50 px-3 py-1 rounded text-white text-xs font-mono">
-                         Resevoir_Simulation.mp4
+                      <h3 className="font-bold text-gray-400 text-xs uppercase tracking-widest mb-2">Concept Card #42</h3>
+                      <p className="text-2xl font-black text-gray-800 mb-6">What is the formula for Darcy's Law in Radial Flow?</p>
+                      
+                      <div className="w-full h-12 bg-gray-50 rounded-lg border border-dashed border-gray-300 flex items-center justify-center text-gray-400 font-bold text-sm cursor-pointer hover:bg-yellow-50 hover:text-yellow-700 transition-colors">
+                          Click to Reveal Answer
                       </div>
                   </div>
                </div>
             </div>
             <div className="flex-1">
                <h2 className="text-4xl font-black text-gray-900 mb-6">
-                  Learn with <span className="text-purple-600 handwritten-title">Visuals.</span>
+                  Never Forget a <span className="text-yellow-500 handwritten-title">Concept.</span>
                </h2>
                <p className="text-lg text-gray-600 mb-8 leading-relaxed">
-                  Petroleum Engineering involves complex subsurface machinery and fluid dynamics. We don't just write about it; we show it.
+                  Videos are great, but active recall is better. Our AI generates smart flashcards for every module to ensure you retain formulas and concepts until exam day.
                </p>
                <div className="space-y-6">
                   <FeatureItem 
-                     title="Drilling Rig Operations" 
-                     desc="See how the drill string, mud circulation, and BOP stack work in 3D."
-                     icon={<Layers size={20} className="text-purple-600"/>}
+                     title="Spaced Repetition" 
+                     desc="The system learns what you find hard and shows those cards more often."
+                     icon={<Repeat size={20} className="text-yellow-600"/>}
                   />
                   <FeatureItem 
-                     title="Reservoir Phase Behavior" 
-                     desc="Visualize PVT diagrams and phase envelopes changing with pressure."
-                     icon={<ActivityGraph size={20} className="text-purple-600"/>}
+                     title="Formula Mastery" 
+                     desc="Dedicated decks for Reservoir, Production, and Drilling formulas."
+                     icon={<FileText size={20} className="text-yellow-600"/>}
                   />
                   <FeatureItem 
-                     title="Enhanced Oil Recovery" 
-                     desc="Understand waterflooding and gas injection sweep efficiency visually."
-                     icon={<Zap size={20} className="text-purple-600"/>}
+                     title="AI Generated" 
+                     desc="Flashcards are auto-generated from the notes to cover every detail."
+                     icon={<Sparkles size={20} className="text-yellow-600"/>}
                   />
                </div>
             </div>
          </div>
-      </section>
-
-      {/* RESTORED: FEATURE 3 - HANDWRITTEN NOTES */}
-      <section className="py-24 px-6 bg-[#ecfdf5] relative overflow-hidden">
-        <div className="blob blob-2 opacity-50"></div>
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row-reverse items-center gap-12 relative z-10">
-           <div className="flex-1 text-left">
-              <h2 className="text-4xl font-black text-gray-900 mb-6">
-                 Notes that actually <br/> <span className="text-[#0f766e] handwritten-title">make sense.</span>
-              </h2>
-              <p className="text-lg text-gray-600 mb-8 leading-relaxed">
-                 Stop reading 1000-page textbooks. Our handwritten notes are concise, colorful, and cover 100% of the GATE syllabus. Optimized for quick revision.
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                 <ListItem text="Flowcharts & Diagrams" />
-                 <ListItem text="Formula Sheets Included" />
-                 <ListItem text="Highlighting Key Concepts" />
-              </div>
-           </div>
-           
-           <div className="flex-1 w-full">
-              {/* Note Preview Visual */}
-              <div className="relative group">
-                 <div className="absolute inset-0 bg-[#0f766e] rounded-2xl rotate-6 group-hover:rotate-3 transition-transform"></div>
-                 <div className="relative bg-white p-6 rounded-2xl shadow-xl border border-gray-200">
-                    <div className="h-4 w-1/3 bg-gray-200 rounded mb-4"></div>
-                    <div className="h-2 w-full bg-gray-100 rounded mb-2"></div>
-                    <div className="h-2 w-full bg-gray-100 rounded mb-2"></div>
-                    <div className="h-2 w-2/3 bg-gray-100 rounded mb-6"></div>
-                    
-                    {/* Fake Handwritten Diagram */}
-                    <div className="h-40 bg-yellow-50 rounded border border-yellow-100 flex items-center justify-center text-yellow-600 font-handwritten text-2xl rotate-[-2deg]">
-                       <span className="border-b-2 border-yellow-300 pb-1">Reservoir Diagram</span>
-                    </div>
-                 </div>
-              </div>
-           </div>
-        </div>
       </section>
 
       {/* FEATURE 4: TEST SERIES */}
@@ -290,11 +331,12 @@ export function HomePage() {
         </div>
       </section>
 
-      {/* RESTORED: FAQ SECTION */}
+      {/* FAQ SECTION */}
       <section className="py-20 px-6 bg-white">
          <div className="max-w-3xl mx-auto">
             <h2 className="text-center text-3xl font-black text-gray-900 mb-10">Frequently Asked Questions</h2>
             <div className="space-y-4">
+               <FaqItem q="How does Petrobot AI work?" a="Petrobot has been fine-tuned on Petroleum Engineering concepts to answer your doubts instantly." />
                <FaqItem q="Can I access the course on Mobile?" a="Yes! Our platform works perfectly on both Desktop (for tests) and Mobile (for notes/videos)." />
                <FaqItem q="Is the test interface exactly like GATE?" a="Yes. We have replicated the TCS iON interface pixel-by-pixel, including the Virtual Calculator and Color Palette." />
                <FaqItem q="Can I get a refund?" a="Yes, we offer a 7-day money-back guarantee if you are not satisfied with the content." />
@@ -307,13 +349,19 @@ export function HomePage() {
         <div className="max-w-5xl mx-auto bg-[#0f766e] rounded-3xl p-10 md:p-16 text-center text-white relative overflow-hidden shadow-2xl">
           <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
           <div className="relative z-10">
-            <h2 className="text-3xl md:text-5xl font-black mb-6 handwritten-title">Ready to top GATE 2026?</h2>
+            {/* UPDATED CTA TEXT */}
+            <h2 className="text-3xl md:text-5xl font-black mb-6 handwritten-title">Ready to master Petroleum Engineering?</h2>
             <p className="text-teal-100 text-lg mb-10 max-w-xl mx-auto">
-              Become a PETRO ELITE member today.
+              Join thousands of students using Petrobot and Elite Notes.
             </p>
-            <Link to="/enroll" className="inline-block bg-white text-[#0f766e] px-10 py-4 rounded-xl font-bold text-xl hover:bg-teal-50 transition-colors shadow-lg">
-              Enroll for ₹1499
-            </Link>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Link to="/enroll" className="inline-block bg-white text-[#0f766e] px-10 py-4 rounded-xl font-bold text-xl hover:bg-teal-50 transition-colors shadow-lg">
+                  View Course Plans
+                </Link>
+                <Link to="/explore" className="inline-block bg-teal-800 text-teal-100 border border-teal-700 px-10 py-4 rounded-xl font-bold text-xl hover:bg-teal-900 transition-colors">
+                  Try Demo
+                </Link>
+            </div>
             <p className="mt-6 text-sm text-teal-200 font-bold flex items-center justify-center gap-2">
                <ShieldCheck size={16}/> 100% Secure Payment • 7-Day Refund Policy
             </p>
@@ -359,7 +407,7 @@ function ListItem({ text, dark }: any) {
 function FeatureItem({ title, desc, icon }: any) {
    return (
       <div className="flex gap-4">
-         <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center shrink-0">
+         <div className="w-12 h-12 bg-teal-50 rounded-xl flex items-center justify-center shrink-0">
             {icon}
          </div>
          <div>
